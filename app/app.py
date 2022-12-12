@@ -1,4 +1,6 @@
 from aiohttp import web
+import aiohttp_jinja2
+import jinja2
 
 users = {
     1: {'user_id': 1, 'username': 'Jack', 'age': 25},
@@ -42,7 +44,9 @@ async def get_user(request):
     user_id = int(request.match_info['user_id'])
     user = users[user_id]
 
-    return web.json_response(user)
+    response = aiohttp_jinja2.render_template('user.html', request, user)
+
+    return response
 
 
 async def create_user(request):
@@ -80,6 +84,8 @@ async def delete_user(request):
 
 app = web.Application(middlewares=[check_authn, check_authz])
 
+aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(
+    'D:\\projects\\aiohttp-app\\app\\templates'))
 
 app.add_routes([web.get('/users', get_users),
                 web.post('/users', create_user),

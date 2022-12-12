@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 aiohttp-jinja2 = "*"
+jinja2 = "*"
 
 [dev-packages]
 aiohttp = "*"
