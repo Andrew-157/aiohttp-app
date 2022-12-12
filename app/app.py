@@ -1,8 +1,8 @@
 from aiohttp import web
 
 users = {
-    1: {'user_id': 1, 'nickname': 'Jack', 'age': 25},
-    2: {'user_id': 2, 'nickname': 'John', 'age': 22}
+    1: {'user_id': 1, 'username': 'Jack', 'age': 25},
+    2: {'user_id': 2, 'username': 'John', 'age': 22}
 }
 
 
@@ -27,9 +27,9 @@ async def check_authz(request, handler):
 async def get_users(request):
 
     print("Get users handler")
-    if 'nickname' in request.query:
+    if 'username' in request.query:
         for user_id, user in users.items():
-            if request.query['nickname'] == user['nickname']:
+            if request.query['username'] == user['username']:
                 return web.json_response(user)
 
     return web.json_response(users)

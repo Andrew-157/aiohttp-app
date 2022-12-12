@@ -24,7 +24,7 @@ async def get_user(session):
 
 async def create_user(session):
 
-    user = {'user_id': 3, 'nickname': 'Mary', 'age': 19}
+    user = {'user_id': 3, 'username': 'Mary', 'age': 19}
 
     async with session.post('http://localhost:8080/users', ssl=False, json=user) as response:
 
@@ -36,7 +36,7 @@ async def create_user(session):
 async def update_user(session):
 
     user_id = 3
-    user = {'user_id': user_id, 'nickname': 'Mary', 'age': 20}
+    user = {'user_id': user_id, 'username': 'Mary', 'age': 20}
 
     async with session.put(f'http://localhost:8080/users/{user_id}', ssl=False, json=user) as response:
 
