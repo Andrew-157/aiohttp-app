@@ -2,20 +2,38 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 import base64
+import random
+import string
 
 users = {
     1: {'user_id': 1, 'username': 'Jack', 'age': 25, 'password': 'password_jack'},
     2: {'user_id': 2, 'username': 'John', 'age': 22, 'password': 'password_john'}
 }
 
+user_sessions = {}
+
+
+def generate_token():
+
+    letters = string.ascii_lowercase
+    token = ''.join(random.choice(letters) for i in range(16))
+
+    return token
+
 
 @web.middleware
-async def check_authn(request, handler):
+async def check_authz(request, handler):
+
+    print("Before Authz")
+    response = await handler(request)
+    print("After Authz")
+    return response
+
+
+async def autenticate(request):
 
     creds_raw = request.headers['Authorization']
-    print(creds_raw)
     creds_encoded = creds_raw.split(' ')[1]
-    print(creds_encoded)
     creds_decoded = base64.b64decode(creds_encoded).decode()
     username, password = creds_decoded.split(':')
 
@@ -26,19 +44,12 @@ async def check_authn(request, handler):
 
             print("Authenticated...")
 
-            response = await handler(request)
-            return response
+            token = generate_token()
+            user_sessions[username] = token
+
+            return web.json_response({'token': token})
 
     return web.json_response({'error': 'invalid credentials'}, status=401)
-
-
-@web.middleware
-async def check_authz(request, handler):
-
-    print("Before Authz")
-    response = await handler(request)
-    print("After Authz")
-    return response
 
 
 async def get_users(request):
@@ -96,16 +107,20 @@ async def delete_user(request):
     return web.Response()
 
 
-app = web.Application(middlewares=[check_authn, check_authz])
+app = web.Application(middlewares=[check_authz])
+
 
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(
     'D:\\projects\\aiohttp-app\\app\\templates'))
 
-app.add_routes([web.get('/users', get_users),
+
+app.add_routes([web.post('/authenticate', autenticate),
+                web.get('/users', get_users),
                 web.post('/users', create_user),
                 web.get('/users/{user_id}', get_user),
                 web.put('/users/{user_id}', update_user),
                 web.delete('/users/{user_id}', delete_user)])
+
 
 if __name__ == '__main__':
     web.run_app(app)
