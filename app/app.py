@@ -1,20 +1,35 @@
 from aiohttp import web
 import aiohttp_jinja2
 import jinja2
+import base64
 
 users = {
-    1: {'user_id': 1, 'username': 'Jack', 'age': 25},
-    2: {'user_id': 2, 'username': 'John', 'age': 22}
+    1: {'user_id': 1, 'username': 'Jack', 'age': 25, 'password': 'password_jack'},
+    2: {'user_id': 2, 'username': 'John', 'age': 22, 'password': 'password_john'}
 }
 
 
 @web.middleware
 async def check_authn(request, handler):
 
-    print("Before Authn")
-    response = await handler(request)
-    print("After Authn")
-    return response
+    creds_raw = request.headers['Authorization']
+    print(creds_raw)
+    creds_encoded = creds_raw.split(' ')[1]
+    print(creds_encoded)
+    creds_decoded = base64.b64decode(creds_encoded).decode()
+    username, password = creds_decoded.split(':')
+
+    print(f"Authenticating user {username}...")
+
+    for user in users.values():
+        if username == user['username'] and password == user['password']:
+
+            print("Authenticated...")
+
+            response = await handler(request)
+            return response
+
+    return web.json_response({'error': 'invalid credentials'}, status=401)
 
 
 @web.middleware
