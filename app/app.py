@@ -37,6 +37,7 @@ async def get_users(request):
     return web.json_response(users)
 
 
+@aiohttp_jinja2.template('user.html')
 async def get_user(request):
 
     print("Get user handler")
@@ -44,10 +45,7 @@ async def get_user(request):
     user_id = int(request.match_info['user_id'])
     user = users[user_id]
 
-    response = aiohttp_jinja2.render_template(
-        'user.html', request, {'user': user})
-
-    return response
+    return {'user': user}
 
 
 async def create_user(request):
