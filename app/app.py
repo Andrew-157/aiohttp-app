@@ -44,7 +44,8 @@ async def get_user(request):
     user_id = int(request.match_info['user_id'])
     user = users[user_id]
 
-    response = aiohttp_jinja2.render_template('user.html', request, user)
+    response = aiohttp_jinja2.render_template(
+        'user.html', request, {'user': user})
 
     return response
 
