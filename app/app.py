@@ -4,6 +4,7 @@ import jinja2
 import base64
 import random
 import string
+import json
 
 users = {
     1: {'user_id': 1, 'username': 'Jack', 'age': 25, 'password': 'password_jack'},
@@ -13,21 +14,40 @@ users = {
 user_sessions = {}
 
 
-def generate_token():
+def generate_token(username):
 
+    payload = json.dumps({'sub': username})
     letters = string.ascii_lowercase
-    token = ''.join(random.choice(letters) for i in range(16))
+    signature = ''.join(random.choice(letters) for i in range(16))
 
-    return token
+    token = base64.b64encode(f'{payload}.{signature}'.encode())
+
+    return token, signature
 
 
 @web.middleware
 async def check_authz(request, handler):
 
-    print("Before Authz")
-    response = await handler(request)
-    print("After Authz")
-    return response
+    if handler.__name__ == 'autenticate':
+
+        response = await handler(request)
+        return response
+
+    creds_raw = request.headers['Authorization']
+    token = creds_raw.split(' ')[1]
+    decoded_token = base64.b64decode(token.encode())
+    payload, signature = decoded_token.decode().split('.')
+    username = json.loads(payload)['sub']
+
+    print(f'Authorizing {username}...')
+
+    if username in user_sessions and user_sessions[username] == signature:
+
+        print('Authorized')
+        response = await handler(request)
+        return response
+
+    return web.json_response({'error': 'Not authorized'}, status=403)
 
 
 async def autenticate(request):
@@ -44,10 +64,10 @@ async def autenticate(request):
 
             print("Authenticated...")
 
-            token = generate_token()
-            user_sessions[username] = token
+            token, signature = generate_token(username)
+            user_sessions[username] = signature
 
-            return web.json_response({'token': token})
+            return web.Response(text=f'{token}')
 
     return web.json_response({'error': 'invalid credentials'}, status=401)
 
