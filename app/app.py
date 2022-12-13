@@ -1,10 +1,25 @@
 from aiohttp import web
+import aiohttp_sqlalchemy as ahsa
+import sqlalchemy as sa
 import aiohttp_jinja2
 import jinja2
 import base64
 import random
 import string
 import json
+
+
+metadata = sa.MetaData()
+Base = sa.declarative_base(metadata=metadata)
+
+
+class User(Base):
+
+    __tablename__ = 'users'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    username = sa.Column(sa.String(24), nullable=False)
+
 
 users = {
     1: {'user_id': 1, 'username': 'Jack', 'age': 25, 'password': 'password_jack'},
@@ -132,6 +147,8 @@ app = web.Application(middlewares=[check_authz])
 
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(
     'D:\\projects\\aiohttp-app\\app\\templates'))
+ahsa.setup(app, ahsa.bind('mysql:///root:password@localhost/users'))
+ahsa.init_db(app, metadata)
 
 
 app.add_routes([web.post('/authenticate', autenticate),
